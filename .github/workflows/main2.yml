@@ -1,0 +1,38 @@
+name: Used Cars Price Prediction MLOps Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  run-azureml-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Install Azure ML Extension
+        run: az extension add -n ml -y
+
+      - name: Create Compute Target
+        run: |
+          az ml compute create --name cpu-cluster --size Standard_DS11_v2 --min-instances 0 --max-instances 1 --type AmlCompute --resource-group default_resourse_group --workspace-name demo_workspace || true
+
+      - name: Register Data Asset
+        run: |
+          az ml data create --file data.yml --resource-group default_resourse_group --workspace-name demo_workspace || true
+
+      - name: Register Environment
+        run: |
+          az ml environment create --file train-env.yml --resource-group default_resourse_group --workspace-name demo_workspace || true
+
+      - name: Submit Azure ML Pipeline Job
+        run: |
+          az ml job create --file newpipeline.yml --resource-group default_resourse_group --workspace-name demo_workspace
