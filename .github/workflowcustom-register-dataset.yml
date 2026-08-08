@@ -1,0 +1,37 @@
+name: custom-register-dataset
+
+on:
+  workflow_call:
+    inputs:
+      data_file:
+        required: true
+        type: string
+      name:
+        required: true
+        type: string
+      resource_group:
+        required: true
+        type: string
+      workspace_name:
+        required: true
+        type: string
+    secrets:
+      creds:
+        required: true
+
+jobs:
+  register-data:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repo
+      uses: actions/checkout@v2
+
+    - name: Azure login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.creds }}
+
+    - name: Register Data Asset
+      run: |
+        az extension add -n ml -y
+        az ml data create --file ${{ inputs.data_file }} --resource-group ${{ inputs.resource_group }} --workspace-name ${{ inputs.workspace_name }}
